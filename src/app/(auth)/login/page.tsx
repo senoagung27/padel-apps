@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { signIn } from "@/lib/auth-client";
+import { createClient } from "@/lib/supabase/client";
 import { Loader2, Lock, Mail } from "lucide-react";
 import Link from "next/link";
 
@@ -19,20 +19,31 @@ export default function LoginPage() {
     setError("");
 
     try {
-      const result = await signIn.email({ email, password });
-      if (result.error) {
-        setError(result.error.message || "Login gagal");
+      const supabase = createClient();
+      const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+      if (signInError) {
+        setError(signInError.message || "Login gagal");
+        setLoading(false);
+        return;
+      }
+
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        setError("Login gagal. Silakan coba lagi.");
+        setLoading(false);
+        return;
+      }
+
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("id", user.id)
+        .single();
+
+      if (profile?.role === "superadmin") {
+        router.push("/superadmin/dashboard");
       } else {
-        // Redirect based on role
-        const res = await fetch("/api/auth/get-session");
-        if (res.ok) {
-          const session = await res.json();
-          if (session?.user?.role === "superadmin") {
-            router.push("/superadmin/dashboard");
-          } else {
-            router.push("/operator/dashboard");
-          }
-        }
+        router.push("/operator/dashboard");
       }
     } catch {
       setError("Login gagal. Periksa email dan password Anda.");

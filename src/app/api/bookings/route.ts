@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/lib/db";
-import { bookings } from "@/lib/db/schema";
-import { eq, and } from "drizzle-orm";
+import { createClient } from "@/lib/supabase/server";
 import { generateBookingCode } from "@/lib/utils";
 import { z } from "zod";
 
@@ -23,29 +21,33 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const data = bookingSchema.parse(body);
+    const supabase = await createClient();
     const bookingCode = generateBookingCode();
 
-    const [newBooking] = await db
-      .insert(bookings)
-      .values({
-        bookingCode,
-        courtId: data.courtId,
-        venueId: data.venueId,
-        guestName: data.guestName,
-        guestEmail: data.guestEmail,
-        guestPhone: data.guestPhone,
-        bookingDate: data.bookingDate,
-        startTime: data.startTime,
-        endTime: data.endTime,
-        durationHours: data.durationHours,
-        totalAmount: data.totalAmount,
-        transferProofUrl: data.transferProofUrl || null,
+    const { data: newBooking, error } = await supabase
+      .from("bookings")
+      .insert({
+        booking_code: bookingCode,
+        court_id: data.courtId,
+        venue_id: data.venueId,
+        guest_name: data.guestName,
+        guest_email: data.guestEmail,
+        guest_phone: data.guestPhone,
+        booking_date: data.bookingDate,
+        start_time: data.startTime,
+        end_time: data.endTime,
+        duration_hours: data.durationHours,
+        total_amount: data.totalAmount,
+        transfer_proof_url: data.transferProofUrl || null,
         status: "pending",
       })
-      .returning();
+      .select("id, booking_code")
+      .single();
+
+    if (error) throw error;
 
     return NextResponse.json(
-      { bookingCode: newBooking.bookingCode, id: newBooking.id },
+      { bookingCode: newBooking.booking_code, id: newBooking.id },
       { status: 201 }
     );
   } catch (error) {

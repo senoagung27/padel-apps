@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/lib/db";
-import { bookings, courts, venues } from "@/lib/db/schema";
-import { eq, and } from "drizzle-orm";
+import { createClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
@@ -15,38 +13,32 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Code and email required" }, { status: 400 });
     }
 
-    const booking = await db.query.bookings.findFirst({
-      where: and(
-        eq(bookings.bookingCode, code),
-        eq(bookings.guestEmail, email)
-      ),
-    });
+    const supabase = await createClient();
+    const { data: booking, error } = await supabase
+      .from("bookings")
+      .select("*, courts(name), venues(name)")
+      .eq("booking_code", code)
+      .eq("guest_email", email)
+      .single();
 
-    if (!booking) {
+    if (error || !booking) {
       return NextResponse.json({ error: "Booking not found" }, { status: 404 });
     }
 
-    const court = await db.query.courts.findFirst({
-      where: eq(courts.id, booking.courtId),
-    });
-    const venue = await db.query.venues.findFirst({
-      where: eq(venues.id, booking.venueId),
-    });
-
     return NextResponse.json({
-      bookingCode: booking.bookingCode,
+      bookingCode: booking.booking_code,
       status: booking.status,
-      guestName: booking.guestName,
-      bookingDate: booking.bookingDate,
-      startTime: booking.startTime,
-      endTime: booking.endTime,
-      durationHours: booking.durationHours,
-      totalAmount: booking.totalAmount,
-      courtName: court?.name || "",
-      venueName: venue?.name || "",
-      operatorNote: booking.operatorNote,
+      guestName: booking.guest_name,
+      bookingDate: booking.booking_date,
+      startTime: booking.start_time,
+      endTime: booking.end_time,
+      durationHours: booking.duration_hours,
+      totalAmount: booking.total_amount,
+      courtName: booking.courts?.name || "",
+      venueName: booking.venues?.name || "",
+      operatorNote: booking.operator_note,
     });
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: "Failed to check booking" }, { status: 500 });
   }
 }

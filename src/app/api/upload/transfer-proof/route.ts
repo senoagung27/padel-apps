@@ -1,9 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
-import { writeFile, mkdir } from "fs/promises";
-import { join } from "path";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 export async function POST(request: NextRequest) {
   try {
+    if (!process.env.SUPABASE_SERVICE_ROLE_KEY?.trim()) {
+      return NextResponse.json(
+        { error: "Upload is not configured (missing SUPABASE_SERVICE_ROLE_KEY)" },
+        { status: 503 }
+      );
+    }
+
     const formData = await request.formData();
     const file = formData.get("file") as File;
 
@@ -11,13 +17,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "No file provided" }, { status: 400 });
     }
 
-    // Validate MIME type
     const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
     if (!allowedTypes.includes(file.type)) {
       return NextResponse.json({ error: "Invalid file type. Only JPEG, PNG, and WebP allowed." }, { status: 400 });
     }
 
-    // Validate size (5MB max)
     if (file.size > 5 * 1024 * 1024) {
       return NextResponse.json({ error: "File too large. Maximum 5MB." }, { status: 400 });
     }
@@ -25,20 +29,30 @@ export async function POST(request: NextRequest) {
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
 
-    // Create upload directory
-    const uploadDir = join(process.cwd(), "public", "uploads", "transfer-proofs");
-    await mkdir(uploadDir, { recursive: true });
-
-    // Generate unique filename
     const ext = file.name.split(".").pop() || "jpg";
     const filename = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
-    const filepath = join(uploadDir, filename);
 
-    await writeFile(filepath, buffer);
+    const supabase = createAdminClient();
+    const { error } = await supabase.storage
+      .from("transfer-proofs")
+      .upload(filename, buffer, { contentType: file.type });
 
-    const url = `/uploads/transfer-proofs/${filename}`;
-    return NextResponse.json({ url }, { status: 201 });
-  } catch (error) {
-    return NextResponse.json({ error: "Upload failed" }, { status: 500 });
+    if (error) {
+      console.error("[transfer-proof]", error);
+      return NextResponse.json(
+        { error: error.message || "Storage upload failed" },
+        { status: 500 }
+      );
+    }
+
+    const { data: { publicUrl } } = supabase.storage
+      .from("transfer-proofs")
+      .getPublicUrl(filename);
+
+    return NextResponse.json({ url: publicUrl }, { status: 201 });
+  } catch (e) {
+    console.error("[transfer-proof]", e);
+    const message = e instanceof Error ? e.message : "Upload failed";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

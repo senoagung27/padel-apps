@@ -1,9 +1,9 @@
 import Link from "next/link";
 import { MapPin, ArrowRight } from "lucide-react";
-import type { Venue } from "@/lib/db/schema";
 
 interface VenueCardProps {
-  venue: Venue;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  venue: Record<string, any>;
 }
 
 export function VenueCard({ venue }: VenueCardProps) {
@@ -14,9 +14,9 @@ export function VenueCard({ venue }: VenueCardProps) {
     >
       {/* Image */}
       <div className="relative h-48 bg-gradient-to-br from-brand-100 to-brand-200 overflow-hidden">
-        {venue.imageUrl ? (
+        {venue.image_url ? (
           <img
-            src={venue.imageUrl}
+            src={venue.image_url}
             alt={venue.name}
             className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
           />

@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/lib/db";
-import { venues } from "@/lib/db/schema";
-import { eq } from "drizzle-orm";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 export async function PUT(
   request: NextRequest,
@@ -9,24 +7,34 @@ export async function PUT(
 ) {
   try {
     const body = await request.json();
-    const [updated] = await db
-      .update(venues)
-      .set({
+    const supabase = createAdminClient();
+
+    const { data: updated, error } = await supabase
+      .from("venues")
+      .update({
         name: body.name,
         slug: body.slug,
         address: body.address || null,
         description: body.description || null,
         phone: body.phone || null,
-        bankName: body.bankName || null,
-        bankAccount: body.bankAccount || null,
-        bankHolder: body.bankHolder || null,
       })
-      .where(eq(venues.id, params.id))
-      .returning();
+      .eq("id", params.id)
+      .select()
+      .single();
 
-    if (!updated) return NextResponse.json({ error: "Not found" }, { status: 404 });
+    if (error || !updated) return NextResponse.json({ error: "Not found" }, { status: 404 });
+
+    if (body.bankName && body.bankAccount && body.bankHolder) {
+      await supabase.from("bank_accounts").upsert({
+        venue_id: params.id,
+        bank_name: body.bankName,
+        account_number: body.bankAccount,
+        account_holder: body.bankHolder,
+      }, { onConflict: "venue_id" });
+    }
+
     return NextResponse.json(updated);
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: "Failed to update" }, { status: 500 });
   }
 }
@@ -36,9 +44,11 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
-    await db.delete(venues).where(eq(venues.id, params.id));
+    const supabase = createAdminClient();
+    const { error } = await supabase.from("venues").delete().eq("id", params.id);
+    if (error) throw error;
     return NextResponse.json({ ok: true });
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: "Failed to delete" }, { status: 500 });
   }
 }

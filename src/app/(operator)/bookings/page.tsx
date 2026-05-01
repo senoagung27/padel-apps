@@ -1,6 +1,4 @@
-import { db } from "@/lib/db";
-import { bookings } from "@/lib/db/schema";
-import { sql, eq } from "drizzle-orm";
+import { createServerClient } from "@/lib/supabase/server";
 import { StatusBadge } from "@/components/dashboard/status-badge";
 import { formatRupiah } from "@/lib/utils";
 import Link from "next/link";
@@ -12,11 +10,13 @@ export default async function OperatorBookingsPage({ searchParams }: { searchPar
   let allBookings: any[] = [];
 
   try {
+    const supabase = await createServerClient();
+    let query = supabase.from("bookings").select("*").order("created_at", { ascending: false });
     if (statusFilter && statusFilter !== "all") {
-      allBookings = await db.select().from(bookings).where(eq(bookings.status, statusFilter as any)).orderBy(sql`${bookings.createdAt} DESC`);
-    } else {
-      allBookings = await db.select().from(bookings).orderBy(sql`${bookings.createdAt} DESC`);
+      query = query.eq("status", statusFilter);
     }
+    const { data } = await query;
+    allBookings = data ?? [];
   } catch { /* DB not ready */ }
 
   const statuses = ["all", "pending", "confirmed", "rejected", "expired"];
@@ -63,11 +63,11 @@ export default async function OperatorBookingsPage({ searchParams }: { searchPar
             <tbody className="divide-y">
               {allBookings.length > 0 ? allBookings.map((b) => (
                 <tr key={b.id} className="hover:bg-gray-50 transition-colors">
-                  <td className="px-5 py-3 font-mono text-xs">{b.bookingCode}</td>
-                  <td className="px-5 py-3"><div className="font-medium">{b.guestName}</div><div className="text-xs text-gray-400">{b.guestEmail}</div></td>
-                  <td className="px-5 py-3 text-gray-500">{b.bookingDate}</td>
-                  <td className="px-5 py-3 text-gray-500">{b.startTime?.slice(0, 5)} - {b.endTime?.slice(0, 5)}</td>
-                  <td className="px-5 py-3 font-medium">{formatRupiah(b.totalAmount)}</td>
+                  <td className="px-5 py-3 font-mono text-xs">{b.booking_code}</td>
+                  <td className="px-5 py-3"><div className="font-medium">{b.guest_name}</div><div className="text-xs text-gray-400">{b.guest_email}</div></td>
+                  <td className="px-5 py-3 text-gray-500">{b.booking_date}</td>
+                  <td className="px-5 py-3 text-gray-500">{b.start_time?.slice(0, 5)} - {b.end_time?.slice(0, 5)}</td>
+                  <td className="px-5 py-3 font-medium">{formatRupiah(b.total_amount)}</td>
                   <td className="px-5 py-3"><StatusBadge status={b.status} /></td>
                   <td className="px-5 py-3"><Link href={`/operator/bookings/${b.id}`} className="text-brand-600 hover:underline text-xs font-medium">Detail →</Link></td>
                 </tr>

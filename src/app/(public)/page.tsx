@@ -1,8 +1,6 @@
 import { HeroSection } from "@/components/public/hero-section";
 import { VenueCard } from "@/components/public/venue-card";
-import { db } from "@/lib/db";
-import { venues } from "@/lib/db/schema";
-import { eq } from "drizzle-orm";
+import { createServerClient } from "@/lib/supabase/server";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -15,14 +13,14 @@ export const dynamic = "force-dynamic";
 
 async function getVenues() {
   try {
-    const allVenues = await db
-      .select()
-      .from(venues)
-      .where(eq(venues.isActive, true))
-      .orderBy(venues.createdAt);
-    return allVenues;
+    const supabase = await createServerClient();
+    const { data } = await supabase
+      .from("venues")
+      .select("*")
+      .eq("is_active", true)
+      .order("created_at", { ascending: true });
+    return data ?? [];
   } catch {
-    // Return empty array if DB is not yet connected
     return [];
   }
 }

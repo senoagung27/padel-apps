@@ -1,10 +1,10 @@
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { formatRupiah } from "@/lib/utils";
-import type { Court } from "@/lib/db/schema";
 
 interface CourtCardProps {
-  court: Court;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  court: Record<string, any>;
   venueSlug: string;
 }
 
@@ -32,7 +32,7 @@ export function CourtCard({ court, venueSlug }: CourtCardProps) {
           <div>
             <p className="text-xs text-gray-500 mb-0.5">Harga per jam</p>
             <p className="text-xl font-bold text-gray-900">
-              {formatRupiah(court.pricePerHour)}
+              {formatRupiah(court.price_per_hour)}
             </p>
           </div>
           <Link

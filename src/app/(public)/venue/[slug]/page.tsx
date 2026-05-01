@@ -1,6 +1,4 @@
-import { db } from "@/lib/db";
-import { venues, courts } from "@/lib/db/schema";
-import { eq, and } from "drizzle-orm";
+import { createServerClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
 import { CourtCard } from "@/components/public/court-card";
 import { MapPin, Phone, ArrowLeft } from "lucide-react";
@@ -12,9 +10,8 @@ interface Props {
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const venue = await db.query.venues.findFirst({
-    where: eq(venues.slug, params.slug),
-  });
+  const supabase = await createServerClient();
+  const { data: venue } = await supabase.from("venues").select("name, description").eq("slug", params.slug).single();
   if (!venue) return { title: "Venue Tidak Ditemukan" };
   return {
     title: `${venue.name} — PadelBook`,
@@ -25,23 +22,19 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export const dynamic = "force-dynamic";
 
 export default async function VenuePage({ params }: Props) {
-  const venue = await db.query.venues.findFirst({
-    where: and(eq(venues.slug, params.slug), eq(venues.isActive, true)),
-  });
+  const supabase = await createServerClient();
+  const { data: venue } = await supabase.from("venues").select("*").eq("slug", params.slug).eq("is_active", true).single();
   if (!venue) notFound();
 
-  const courtList = await db
-    .select()
-    .from(courts)
-    .where(and(eq(courts.venueId, venue.id), eq(courts.isActive, true)))
-    .orderBy(courts.name);
+  const { data: courtListData } = await supabase.from("courts").select("*").eq("venue_id", venue.id).eq("is_active", true).order("name");
+  const courtList = courtListData ?? [];
 
   return (
     <div className="min-h-screen">
       <section className="relative">
         <div className="h-64 bg-gradient-to-br from-brand-600 via-brand-500 to-emerald-400 relative overflow-hidden">
-          {venue.imageUrl && (
-            <img src={venue.imageUrl} alt={venue.name} className="absolute inset-0 w-full h-full object-cover mix-blend-overlay opacity-50" />
+          {venue.image_url && (
+            <img src={venue.image_url} alt={venue.name} className="absolute inset-0 w-full h-full object-cover mix-blend-overlay opacity-50" />
           )}
           <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
           <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full flex flex-col justify-end pb-8">

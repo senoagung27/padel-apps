@@ -1,6 +1,4 @@
-import { db } from "@/lib/db";
-import { bookings, venues, courts, users } from "@/lib/db/schema";
-import { sql, count, eq } from "drizzle-orm";
+import { createServerClient } from "@/lib/supabase/server";
 import { StatCard } from "@/components/dashboard/stat-card";
 import { StatusBadge } from "@/components/dashboard/status-badge";
 import { formatRupiah } from "@/lib/utils";
@@ -14,23 +12,27 @@ export default async function SuperadminDashboard() {
   let recentBookings: any[] = [];
 
   try {
-    const [venueCount] = await db.select({ count: count() }).from(venues);
-    const [courtCount] = await db.select({ count: count() }).from(courts);
-    const [operatorCount] = await db.select({ count: count() }).from(users).where(eq(users.role, "operator"));
-    const [bookingCount] = await db.select({ count: count() }).from(bookings);
-    const [pendingCount] = await db.select({ count: count() }).from(bookings).where(eq(bookings.status, "pending"));
-    const [revenueResult] = await db.select({ total: sql<number>`COALESCE(SUM(${bookings.totalAmount}), 0)` }).from(bookings).where(eq(bookings.status, "confirmed"));
+    const supabase = await createServerClient();
+
+    const { count: venueCnt } = await supabase.from("venues").select("*", { count: "exact", head: true });
+    const { count: courtCnt } = await supabase.from("courts").select("*", { count: "exact", head: true });
+    const { count: operatorCnt } = await supabase.from("profiles").select("*", { count: "exact", head: true }).eq("role", "operator");
+    const { count: bookingCnt } = await supabase.from("bookings").select("*", { count: "exact", head: true });
+    const { count: pendingCnt } = await supabase.from("bookings").select("*", { count: "exact", head: true }).eq("status", "pending");
+    const { data: revenueData } = await supabase.from("bookings").select("total_amount").eq("status", "terpesan");
+    const revenue = revenueData?.reduce((sum, b) => sum + (b.total_amount || 0), 0) ?? 0;
 
     stats = {
-      venues: venueCount?.count || 0,
-      courts: courtCount?.count || 0,
-      operators: operatorCount?.count || 0,
-      bookings: bookingCount?.count || 0,
-      pending: pendingCount?.count || 0,
-      revenue: revenueResult?.total || 0,
+      venues: venueCnt ?? 0,
+      courts: courtCnt ?? 0,
+      operators: operatorCnt ?? 0,
+      bookings: bookingCnt ?? 0,
+      pending: pendingCnt ?? 0,
+      revenue,
     };
 
-    recentBookings = await db.select().from(bookings).orderBy(sql`${bookings.createdAt} DESC`).limit(5);
+    const { data: recentData } = await supabase.from("bookings").select("*").order("created_at", { ascending: false }).limit(5);
+    recentBookings = recentData ?? [];
   } catch { /* DB not ready */ }
 
   return (
@@ -67,9 +69,9 @@ export default async function SuperadminDashboard() {
             <tbody className="divide-y">
               {recentBookings.map((b) => (
                 <tr key={b.id} className="hover:bg-gray-50">
-                  <td className="px-5 py-3 font-mono text-xs">{b.bookingCode}</td>
-                  <td className="px-5 py-3 font-medium">{b.guestName}</td>
-                  <td className="px-5 py-3">{formatRupiah(b.totalAmount)}</td>
+                  <td className="px-5 py-3 font-mono text-xs">{b.booking_code}</td>
+                  <td className="px-5 py-3 font-medium">{b.guest_name}</td>
+                  <td className="px-5 py-3">{formatRupiah(b.total_amount)}</td>
                   <td className="px-5 py-3"><StatusBadge status={b.status} /></td>
                 </tr>
               ))}

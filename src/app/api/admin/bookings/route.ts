@@ -1,15 +1,19 @@
 import { NextResponse } from "next/server";
-import { db } from "@/lib/db";
-import { bookings } from "@/lib/db/schema";
-import { sql } from "drizzle-orm";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
   try {
-    const allBookings = await db.select().from(bookings).orderBy(sql`${bookings.createdAt} DESC`);
-    return NextResponse.json(allBookings);
-  } catch (error) {
+    const supabase = createAdminClient();
+    const { data, error } = await supabase
+      .from("bookings")
+      .select("*, courts(name), venues(name)")
+      .order("created_at", { ascending: false });
+
+    if (error) throw error;
+    return NextResponse.json(data);
+  } catch {
     return NextResponse.json({ error: "Failed to fetch bookings" }, { status: 500 });
   }
 }

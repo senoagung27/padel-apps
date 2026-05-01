@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { signOut } from "@/lib/auth-client";
+import { createClient } from "@/lib/supabase/client";
 import { LayoutDashboard, CalendarDays, LogOut, Menu, X, ChevronRight } from "lucide-react";
 import { useState } from "react";
 
@@ -15,6 +15,12 @@ export function DashboardSidebar({ role = "operator" }: { role?: string }) {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+
+  async function handleLogout() {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    window.location.href = "/login";
+  }
 
   const items = role === "superadmin"
     ? [
@@ -65,7 +71,7 @@ export function DashboardSidebar({ role = "operator" }: { role?: string }) {
       {/* Logout */}
       <div className="p-3 border-t border-white/10">
         <button
-          onClick={() => { signOut(); window.location.href = "/login"; }}
+          onClick={handleLogout}
           className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-navy-400 hover:bg-red-500/10 hover:text-red-400 transition-all w-full"
         >
           <LogOut className="w-5 h-5 shrink-0" />

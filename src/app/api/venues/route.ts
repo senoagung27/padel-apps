@@ -1,19 +1,20 @@
 import { NextResponse } from "next/server";
-import { db } from "@/lib/db";
-import { venues } from "@/lib/db/schema";
-import { eq } from "drizzle-orm";
+import { createClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
   try {
-    const allVenues = await db
-      .select()
-      .from(venues)
-      .where(eq(venues.isActive, true))
-      .orderBy(venues.createdAt);
-    return NextResponse.json(allVenues);
-  } catch (error) {
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from("venues")
+      .select("*")
+      .eq("is_active", true)
+      .order("created_at");
+
+    if (error) throw error;
+    return NextResponse.json(data);
+  } catch {
     return NextResponse.json({ error: "Failed to fetch venues" }, { status: 500 });
   }
 }

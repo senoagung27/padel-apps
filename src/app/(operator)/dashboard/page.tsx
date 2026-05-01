@@ -1,6 +1,4 @@
-import { db } from "@/lib/db";
-import { bookings, venues, venueOperators } from "@/lib/db/schema";
-import { eq, and, sql, count } from "drizzle-orm";
+import { createServerClient } from "@/lib/supabase/server";
 import { StatCard } from "@/components/dashboard/stat-card";
 import { StatusBadge } from "@/components/dashboard/status-badge";
 import { formatRupiah, formatDate } from "@/lib/utils";
@@ -14,22 +12,42 @@ export default async function OperatorDashboard() {
   let recentBookings: any[] = [];
 
   try {
+    const supabase = await createServerClient();
     const today = new Date().toISOString().slice(0, 10);
 
-    // Get all bookings (operator scope would filter by venue in production)
-    const allBookings = await db.select().from(bookings).orderBy(sql`${bookings.createdAt} DESC`).limit(10);
-    recentBookings = allBookings;
+    const { data: allBookingsData } = await supabase
+      .from("bookings")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(10);
+    recentBookings = allBookingsData ?? [];
 
-    const pendingCount = await db.select({ count: count() }).from(bookings).where(eq(bookings.status, "pending"));
-    const confirmedToday = await db.select({ count: count() }).from(bookings).where(and(eq(bookings.status, "confirmed"), eq(bookings.bookingDate, today)));
-    const revenueResult = await db.select({ total: sql<number>`COALESCE(SUM(${bookings.totalAmount}), 0)` }).from(bookings).where(eq(bookings.status, "confirmed"));
-    const totalCount = await db.select({ count: count() }).from(bookings);
+    const { count: pendingCnt } = await supabase
+      .from("bookings")
+      .select("*", { count: "exact", head: true })
+      .eq("status", "pending");
+
+    const { count: confirmedTodayCnt } = await supabase
+      .from("bookings")
+      .select("*", { count: "exact", head: true })
+      .eq("status", "terpesan")
+      .eq("booking_date", today);
+
+    const { data: revenueData } = await supabase
+      .from("bookings")
+      .select("total_amount")
+      .eq("status", "terpesan");
+    const revenue = revenueData?.reduce((sum, b) => sum + (b.total_amount || 0), 0) ?? 0;
+
+    const { count: totalCnt } = await supabase
+      .from("bookings")
+      .select("*", { count: "exact", head: true });
 
     stats = {
-      pending: pendingCount[0]?.count || 0,
-      confirmedToday: confirmedToday[0]?.count || 0,
-      revenue: revenueResult[0]?.total || 0,
-      total: totalCount[0]?.count || 0,
+      pending: pendingCnt ?? 0,
+      confirmedToday: confirmedTodayCnt ?? 0,
+      revenue,
+      total: totalCnt ?? 0,
     };
   } catch { /* DB not connected yet */ }
 
@@ -69,10 +87,10 @@ export default async function OperatorDashboard() {
             <tbody className="divide-y">
               {recentBookings.length > 0 ? recentBookings.map((b) => (
                 <tr key={b.id} className="hover:bg-gray-50 transition-colors">
-                  <td className="px-5 py-3 font-mono text-xs">{b.bookingCode}</td>
-                  <td className="px-5 py-3 font-medium">{b.guestName}</td>
-                  <td className="px-5 py-3 text-gray-500">{b.bookingDate}</td>
-                  <td className="px-5 py-3">{formatRupiah(b.totalAmount)}</td>
+                  <td className="px-5 py-3 font-mono text-xs">{b.booking_code}</td>
+                  <td className="px-5 py-3 font-medium">{b.guest_name}</td>
+                  <td className="px-5 py-3 text-gray-500">{b.booking_date}</td>
+                  <td className="px-5 py-3">{formatRupiah(b.total_amount)}</td>
                   <td className="px-5 py-3"><StatusBadge status={b.status} /></td>
                   <td className="px-5 py-3"><Link href={`/operator/bookings/${b.id}`} className="text-brand-600 hover:underline text-xs">Detail</Link></td>
                 </tr>

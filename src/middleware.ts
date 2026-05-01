@@ -1,7 +1,36 @@
+import { createServerClient } from "@supabase/ssr";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+
+  let response = NextResponse.next({ request });
+
+  // Create Supabase client and refresh session
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return request.cookies.getAll();
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value }) =>
+            request.cookies.set(name, value)
+          );
+          response = NextResponse.next({ request });
+          cookiesToSet.forEach(({ name, value, options }) =>
+            response.cookies.set(name, value, options)
+          );
+        },
+      },
+    }
+  );
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
   // Public routes — no auth required
   if (
@@ -10,13 +39,14 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith("/api/courts") ||
     pathname.startsWith("/api/bookings") ||
     pathname.startsWith("/api/upload") ||
+    pathname.startsWith("/api/cron") ||
     pathname === "/login" ||
     pathname.startsWith("/_next") ||
     pathname.startsWith("/icons") ||
     pathname === "/manifest.json" ||
     pathname === "/favicon.ico"
   ) {
-    return NextResponse.next();
+    return response;
   }
 
   // Protected: operator & superadmin dashboards
@@ -24,53 +54,34 @@ export async function middleware(request: NextRequest) {
   const isSuperadminRoute = pathname.startsWith("/superadmin");
 
   if (isOperatorRoute || isSuperadminRoute) {
-    // Check for session cookie
-    const sessionToken =
-      request.cookies.get("better-auth.session_token")?.value;
-
-    if (!sessionToken) {
+    if (!user) {
       return NextResponse.redirect(new URL("/login", request.url));
     }
 
-    // Verify session via Better Auth API
-    try {
-      const sessionResponse = await fetch(
-        `${request.nextUrl.origin}/api/auth/get-session`,
-        {
-          headers: {
-            cookie: request.headers.get("cookie") || "",
-          },
-        }
-      );
+    // Fetch role from profiles table
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", user.id)
+      .single();
 
-      if (!sessionResponse.ok) {
-        return NextResponse.redirect(new URL("/login", request.url));
-      }
+    const role = profile?.role;
 
-      const session = await sessionResponse.json();
+    // Role-based access
+    if (isSuperadminRoute && role !== "superadmin") {
+      return NextResponse.redirect(new URL("/operator/dashboard", request.url));
+    }
 
-      if (!session?.user) {
-        return NextResponse.redirect(new URL("/login", request.url));
-      }
-
-      // Role-based access
-      if (isSuperadminRoute && session.user.role !== "superadmin") {
-        return NextResponse.redirect(new URL("/operator/dashboard", request.url));
-      }
-
-      if (
-        isOperatorRoute &&
-        session.user.role !== "operator" &&
-        session.user.role !== "superadmin"
-      ) {
-        return NextResponse.redirect(new URL("/login", request.url));
-      }
-    } catch {
+    if (
+      isOperatorRoute &&
+      role !== "operator" &&
+      role !== "superadmin"
+    ) {
       return NextResponse.redirect(new URL("/login", request.url));
     }
   }
 
-  return NextResponse.next();
+  return response;
 }
 
 export const config = {

@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/lib/db";
-import { courts } from "@/lib/db/schema";
-import { eq, sql } from "drizzle-orm";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { z } from "zod";
 
 export const dynamic = "force-dynamic";
@@ -9,14 +7,15 @@ export const dynamic = "force-dynamic";
 export async function GET(request: NextRequest) {
   try {
     const venueId = request.nextUrl.searchParams.get("venueId");
-    let allCourts;
-    if (venueId) {
-      allCourts = await db.select().from(courts).where(eq(courts.venueId, venueId)).orderBy(courts.name);
-    } else {
-      allCourts = await db.select().from(courts).orderBy(courts.name);
-    }
-    return NextResponse.json(allCourts);
-  } catch (error) {
+    const supabase = createAdminClient();
+
+    let query = supabase.from("courts").select("*").order("name");
+    if (venueId) query = query.eq("venue_id", venueId);
+
+    const { data, error } = await query;
+    if (error) throw error;
+    return NextResponse.json(data);
+  } catch {
     return NextResponse.json({ error: "Failed to fetch courts" }, { status: 500 });
   }
 }
@@ -32,17 +31,20 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const data = courtSchema.parse(body);
+    const supabase = createAdminClient();
 
-    const [newCourt] = await db
-      .insert(courts)
-      .values({
-        venueId: data.venueId,
+    const { data: newCourt, error } = await supabase
+      .from("courts")
+      .insert({
+        venue_id: data.venueId,
         name: data.name,
         description: data.description || null,
-        pricePerHour: data.pricePerHour,
+        price_per_hour: data.pricePerHour,
       })
-      .returning();
+      .select()
+      .single();
 
+    if (error) throw error;
     return NextResponse.json(newCourt, { status: 201 });
   } catch (error) {
     if (error instanceof z.ZodError) return NextResponse.json({ error: error.errors }, { status: 400 });

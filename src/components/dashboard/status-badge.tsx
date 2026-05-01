@@ -1,14 +1,18 @@
 const statusStyles: Record<string, string> = {
   pending: "bg-amber-100 text-amber-800 border-amber-200",
   confirmed: "bg-green-100 text-green-800 border-green-200",
+  terpesan: "bg-green-100 text-green-800 border-green-200",
   rejected: "bg-red-100 text-red-800 border-red-200",
+  ditolak: "bg-red-100 text-red-800 border-red-200",
   expired: "bg-gray-100 text-gray-600 border-gray-200",
 };
 
 const statusLabels: Record<string, string> = {
   pending: "Pending",
   confirmed: "Terpesan",
+  terpesan: "Terpesan",
   rejected: "Ditolak",
+  ditolak: "Ditolak",
   expired: "Expired",
 };
 
@@ -29,8 +33,8 @@ export function StatusBadge({ status, size = "sm" }: StatusBadgeProps) {
     >
       <span className={`w-1.5 h-1.5 rounded-full ${
         status === "pending" ? "bg-amber-500" :
-        status === "confirmed" ? "bg-green-500" :
-        status === "rejected" ? "bg-red-500" : "bg-gray-400"
+        status === "confirmed" || status === "terpesan" ? "bg-green-500" :
+        status === "rejected" || status === "ditolak" ? "bg-red-500" : "bg-gray-400"
       }`} />
       {label}
     </span>
