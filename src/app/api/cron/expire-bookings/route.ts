@@ -1,3 +1,7 @@
+/**
+ * Dijadwalkan di vercel.json (sekali per hari di akun Hobby).
+ * Untuk jadwal lebih sering (mis. tiap jam), pakai plan Pro di Vercel atau panggil endpoint ini dari scheduler eksternal.
+ */
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 
