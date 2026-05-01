@@ -9,12 +9,14 @@ export function cn(...inputs: ClassValue[]) {
  * Format currency to Indonesian Rupiah
  */
 export function formatRupiah(amount: number): string {
+  const n = Number(amount);
+  const safe = Number.isFinite(n) ? n : 0;
   return new Intl.NumberFormat("id-ID", {
     style: "currency",
     currency: "IDR",
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
-  }).format(amount);
+  }).format(safe);
 }
 
 /**

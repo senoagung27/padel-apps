@@ -13,7 +13,9 @@ export default async function SuperadminBookingsPage({ searchParams }: { searchP
     const supabase = await createServerClient();
     let query = supabase.from("bookings").select("*").order("created_at", { ascending: false });
     if (statusFilter && statusFilter !== "all") {
-      query = query.eq("status", statusFilter);
+      const dbStatus =
+        statusFilter === "confirmed" ? "terpesan" : statusFilter === "rejected" ? "ditolak" : statusFilter;
+      query = query.eq("status", dbStatus);
     }
     const { data } = await query;
     allBookings = data ?? [];
@@ -57,7 +59,7 @@ export default async function SuperadminBookingsPage({ searchParams }: { searchP
                 <td className="px-5 py-3 text-gray-500">{b.booking_date}</td>
                 <td className="px-5 py-3 font-medium">{formatRupiah(b.total_amount)}</td>
                 <td className="px-5 py-3"><StatusBadge status={b.status} /></td>
-                <td className="px-5 py-3"><Link href={`/operator/bookings/${b.id}`} className="text-brand-600 hover:underline text-xs">Detail →</Link></td>
+                <td className="px-5 py-3"><Link href={`/superadmin/bookings/${b.id}`} className="text-brand-600 hover:underline text-xs">Detail →</Link></td>
               </tr>
             ))}
             {allBookings.length === 0 && <tr><td colSpan={6} className="px-5 py-12 text-center text-gray-400">Tidak ada booking</td></tr>}

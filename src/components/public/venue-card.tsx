@@ -11,9 +11,13 @@ interface VenueSummary {
 
 interface VenueCardProps {
   venue: VenueSummary;
+  /** Booking berstatus terpesan + pending — dipakai di beranda untuk venue ramai */
+  activeBookingCount?: number;
 }
 
-export function VenueCard({ venue }: VenueCardProps) {
+export function VenueCard({ venue, activeBookingCount }: VenueCardProps) {
+  const showPopular = typeof activeBookingCount === "number" && activeBookingCount > 0;
+
   return (
     <Link
       href={`/venue/${venue.slug}`}
@@ -21,6 +25,12 @@ export function VenueCard({ venue }: VenueCardProps) {
     >
       {/* Image */}
       <div className="relative h-48 bg-gradient-to-br from-brand-100 to-brand-200 overflow-hidden">
+        {showPopular && (
+          <div className="absolute top-3 right-3 z-10 inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-white/95 text-gray-900 text-xs font-semibold shadow-md border border-orange-100">
+            <span aria-hidden>🔥</span>
+            {activeBookingCount} booking
+          </div>
+        )}
         {venue.image_url ? (
           <img
             src={venue.image_url}
@@ -59,7 +69,7 @@ export function VenueCard({ venue }: VenueCardProps) {
         <div className="flex items-center justify-between">
           <span className="inline-flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-full bg-brand-50 text-brand-700">
             <span className="w-1.5 h-1.5 rounded-full bg-brand-500" />
-            Tersedia
+            {showPopular ? "Lagi ramai" : "Tersedia"}
           </span>
           <span className="inline-flex items-center gap-1 text-sm font-medium text-brand-600 group-hover:gap-2 transition-all">
             Lihat Court

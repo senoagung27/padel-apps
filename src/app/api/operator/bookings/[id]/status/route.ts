@@ -30,7 +30,6 @@ export async function PATCH(
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const body = await request.json();
-    console.log("[STATUS PATCH] body received:", JSON.stringify(body));
     const parsed = updateSchema.parse(body);
 
     // Verify the booking belongs to a venue this operator manages
@@ -63,9 +62,8 @@ export async function PATCH(
 
     return NextResponse.json(updated);
   } catch (error) {
-    console.error("[STATUS PATCH] error:", error);
     if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: error.errors }, { status: 400 });
+      return NextResponse.json({ error: error.issues }, { status: 400 });
     }
     return NextResponse.json({ error: "Failed to update status" }, { status: 500 });
   }

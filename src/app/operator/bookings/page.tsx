@@ -13,7 +13,9 @@ export default async function OperatorBookingsPage({ searchParams }: { searchPar
     const supabase = await createServerClient();
     let query = supabase.from("bookings").select("*").order("created_at", { ascending: false });
     if (statusFilter && statusFilter !== "all") {
-      query = query.eq("status", statusFilter);
+      const dbStatus =
+        statusFilter === "confirmed" ? "terpesan" : statusFilter === "rejected" ? "ditolak" : statusFilter;
+      query = query.eq("status", dbStatus);
     }
     const { data } = await query;
     allBookings = data ?? [];

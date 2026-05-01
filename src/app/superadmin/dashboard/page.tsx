@@ -64,6 +64,7 @@ export default async function SuperadminDashboard() {
                 <th className="px-5 py-3 text-left font-medium text-gray-500">Pemesan</th>
                 <th className="px-5 py-3 text-left font-medium text-gray-500">Total</th>
                 <th className="px-5 py-3 text-left font-medium text-gray-500">Status</th>
+                <th className="px-5 py-3 text-left font-medium text-gray-500"></th>
               </tr>
             </thead>
             <tbody className="divide-y">
@@ -73,9 +74,12 @@ export default async function SuperadminDashboard() {
                   <td className="px-5 py-3 font-medium">{b.guest_name}</td>
                   <td className="px-5 py-3">{formatRupiah(b.total_amount)}</td>
                   <td className="px-5 py-3"><StatusBadge status={b.status} /></td>
+                  <td className="px-5 py-3">
+                    <Link href={`/superadmin/bookings/${b.id}`} className="text-brand-600 hover:underline text-xs font-medium">Detail</Link>
+                  </td>
                 </tr>
               ))}
-              {recentBookings.length === 0 && <tr><td colSpan={4} className="px-5 py-10 text-center text-gray-400">Belum ada booking</td></tr>}
+              {recentBookings.length === 0 && <tr><td colSpan={5} className="px-5 py-10 text-center text-gray-400">Belum ada booking</td></tr>}
             </tbody>
           </table>
         </div>

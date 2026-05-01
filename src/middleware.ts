@@ -77,11 +77,15 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(new URL("/operator/dashboard", request.url));
     }
 
-    if (
-      isOperatorRoute &&
-      role !== "operator" &&
-      role !== "superadmin"
-    ) {
+    if (isOperatorRoute && role === "superadmin") {
+      if (pathname.startsWith("/operator/bookings")) {
+        const suffix = pathname.slice("/operator/bookings".length);
+        return NextResponse.redirect(new URL(`/superadmin/bookings${suffix}`, request.url));
+      }
+      return NextResponse.redirect(new URL("/superadmin/dashboard", request.url));
+    }
+
+    if (isOperatorRoute && role !== "operator" && role !== "superadmin") {
       return NextResponse.redirect(new URL("/login", request.url));
     }
   }

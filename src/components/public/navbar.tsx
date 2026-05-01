@@ -30,7 +30,7 @@ export function Navbar() {
               Beranda
             </Link>
             <Link
-              href="/#venues"
+              href="/lapangan"
               className="text-sm font-medium text-gray-600 hover:text-brand-600 transition-colors"
             >
               Lapangan
@@ -76,7 +76,7 @@ export function Navbar() {
                 Beranda
               </Link>
               <Link
-                href="/#venues"
+                href="/lapangan"
                 className="px-3 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-brand-50 hover:text-brand-600 transition-colors"
                 onClick={() => setIsOpen(false)}
               >

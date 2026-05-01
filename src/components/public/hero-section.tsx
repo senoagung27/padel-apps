@@ -32,10 +32,10 @@ export function HeroSection() {
           {/* CTA buttons */}
           <div className="flex flex-col sm:flex-row gap-4 animate-fade-in animate-delay-200">
             <Link
-              href="/#venues"
+              href="/lapangan"
               className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-xl bg-white text-brand-700 font-semibold text-base shadow-xl shadow-black/10 hover:shadow-2xl hover:scale-[1.02] active:scale-[0.98] transition-all duration-200"
             >
-              Pesan Sekarang
+              Lihat lapangan
               <ArrowRight className="w-5 h-5" />
             </Link>
             <Link

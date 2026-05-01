@@ -37,7 +37,7 @@ export function Footer() {
               </li>
               <li>
                 <Link
-                  href="/#venues"
+                  href="/lapangan"
                   className="text-sm hover:text-brand-400 transition-colors"
                 >
                   Lapangan

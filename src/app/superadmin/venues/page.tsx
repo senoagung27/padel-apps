@@ -13,6 +13,20 @@ interface VenueData {
   bankAccount: string | null;
 }
 
+function normalizeVenueRow(r: Record<string, unknown>): VenueData {
+  const banks = r.bank_accounts as Record<string, unknown>[] | Record<string, unknown> | null | undefined;
+  const b0 = Array.isArray(banks) ? banks[0] : banks;
+  return {
+    id: r.id as string,
+    name: r.name as string,
+    slug: r.slug as string,
+    address: (r.address as string | null) ?? null,
+    isActive: Boolean(r.is_active),
+    bankName: (b0?.bank_name as string | null) ?? null,
+    bankAccount: (b0?.account_number as string | null) ?? null,
+  };
+}
+
 export default function SuperadminVenuesPage() {
   const [venues, setVenues] = useState<VenueData[]>([]);
   const [loading, setLoading] = useState(true);
@@ -24,9 +38,24 @@ export default function SuperadminVenuesPage() {
   async function loadVenues() {
     try {
       const res = await fetch("/api/admin/venues");
-      if (res.ok) setVenues(await res.json());
+      if (res.ok) {
+        const raw = (await res.json()) as Record<string, unknown>[];
+        setVenues(raw.map(normalizeVenueRow));
+      }
     } catch {}
     setLoading(false);
+  }
+
+  async function toggleVenueActive(id: string, currentlyActive: boolean) {
+    const next = !currentlyActive;
+    try {
+      const res = await fetch(`/api/admin/venues/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isActive: next }),
+      });
+      if (res.ok) await loadVenues();
+    } catch {}
   }
 
   useEffect(() => { loadVenues(); }, []);
@@ -106,7 +135,24 @@ export default function SuperadminVenuesPage() {
                 <td className="px-5 py-3 font-medium">{v.name}</td>
                 <td className="px-5 py-3 text-gray-500 text-xs">{v.address || "-"}</td>
                 <td className="px-5 py-3 text-xs">{v.bankName || "-"} {v.bankAccount || ""}</td>
-                <td className="px-5 py-3"><span className={`text-xs font-medium px-2 py-1 rounded-full ${v.isActive ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"}`}>{v.isActive ? "Aktif" : "Nonaktif"}</span></td>
+                <td className="px-5 py-3">
+                  <div className="flex flex-col gap-2 items-start">
+                    <span className={`text-xs font-medium px-2 py-1 rounded-full ${v.isActive ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"}`}>
+                      {v.isActive ? "Aktif" : "Nonaktif"}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => toggleVenueActive(v.id, v.isActive)}
+                      className={`text-xs font-semibold px-2.5 py-1 rounded-lg border transition-colors ${
+                        v.isActive
+                          ? "border-amber-200 text-amber-800 hover:bg-amber-50"
+                          : "border-emerald-200 text-emerald-800 hover:bg-emerald-50"
+                      }`}
+                    >
+                      {v.isActive ? "Nonaktifkan" : "Aktifkan"}
+                    </button>
+                  </div>
+                </td>
                 <td className="px-5 py-3 flex gap-2">
                   <button type="button" onClick={() => handleEdit(v)} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600"><Pencil className="w-4 h-4" /></button>
                   <button type="button" onClick={() => handleDelete(v.id)} className="p-1.5 rounded-lg hover:bg-red-50 text-gray-400 hover:text-red-500"><Trash2 className="w-4 h-4" /></button>

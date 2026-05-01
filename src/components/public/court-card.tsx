@@ -12,9 +12,11 @@ interface CourtSummary {
 interface CourtCardProps {
   court: CourtSummary;
   venueSlug: string;
+  /** Jika diisi (mis. di katalog /lapangan), tampil nama venue dengan link ke halaman venue */
+  venueName?: string;
 }
 
-export function CourtCard({ court, venueSlug }: CourtCardProps) {
+export function CourtCard({ court, venueSlug, venueName }: CourtCardProps) {
   return (
     <div className="group rounded-2xl overflow-hidden bg-white border border-gray-100 shadow-sm hover:shadow-lg hover:border-brand-200 transition-all duration-300">
       {/* Header gradient */}
@@ -23,6 +25,14 @@ export function CourtCard({ court, venueSlug }: CourtCardProps) {
       <div className="p-5">
         <div className="flex items-start justify-between mb-3">
           <div>
+            {venueName && (
+              <Link
+                href={`/venue/${venueSlug}`}
+                className="text-xs font-medium text-brand-600 hover:text-brand-700 mb-1 inline-block"
+              >
+                {venueName}
+              </Link>
+            )}
             <h3 className="text-lg font-bold text-gray-900">{court.name}</h3>
             {court.description && (
               <p className="text-sm text-gray-500 mt-1">{court.description}</p>
