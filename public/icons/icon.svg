@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#22c55e"/>
+      <stop offset="100%" stop-color="#16a34a"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="96" fill="url(#bg)"/>
+  <!-- Padel racket -->
+  <g transform="translate(256,230)" fill="white">
+    <!-- Racket head -->
+    <ellipse cx="30" cy="-40" rx="85" ry="105" fill="white" opacity="0.95"/>
+    <ellipse cx="30" cy="-40" rx="70" ry="88" fill="url(#bg)"/>
+    <!-- Holes pattern -->
+    <g fill="white" opacity="0.5">
+      <circle cx="0" cy="-80" r="5"/><circle cx="20" cy="-80" r="5"/><circle cx="40" cy="-80" r="5"/><circle cx="60" cy="-80" r="5"/>
+      <circle cx="-10" cy="-60" r="5"/><circle cx="10" cy="-60" r="5"/><circle cx="30" cy="-60" r="5"/><circle cx="50" cy="-60" r="5"/><circle cx="70" cy="-60" r="5"/>
+      <circle cx="0" cy="-40" r="5"/><circle cx="20" cy="-40" r="5"/><circle cx="40" cy="-40" r="5"/><circle cx="60" cy="-40" r="5"/>
+      <circle cx="-10" cy="-20" r="5"/><circle cx="10" cy="-20" r="5"/><circle cx="30" cy="-20" r="5"/><circle cx="50" cy="-20" r="5"/><circle cx="70" cy="-20" r="5"/>
+      <circle cx="0" cy="0" r="5"/><circle cx="20" cy="0" r="5"/><circle cx="40" cy="0" r="5"/><circle cx="60" cy="0" r="5"/>
+      <circle cx="10" cy="20" r="5"/><circle cx="30" cy="20" r="5"/><circle cx="50" cy="20" r="5"/>
+    </g>
+    <!-- Handle -->
+    <rect x="10" y="60" width="40" height="80" rx="8" fill="white" opacity="0.95"/>
+    <rect x="16" y="100" width="28" height="30" rx="4" fill="url(#bg)" opacity="0.3"/>
+  </g>
+  <!-- Calendar badge -->
+  <g transform="translate(130, 160)">
+    <rect width="80" height="75" rx="14" fill="white"/>
+    <rect width="80" height="24" rx="14" fill="white"/>
+    <rect y="0" width="80" height="24" rx="14" fill="rgba(0,0,0,0.15)"/>
+    <rect x="18" y="-6" width="8" height="16" rx="4" fill="white"/>
+    <rect x="54" y="-6" width="8" height="16" rx="4" fill="white"/>
+    <text x="40" y="57" text-anchor="middle" font-family="Arial,sans-serif" font-weight="bold" font-size="32" fill="#16a34a">3</text>
+  </g>
+</svg>
