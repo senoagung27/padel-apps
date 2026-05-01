@@ -2,9 +2,15 @@ import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { formatRupiah } from "@/lib/utils";
 
+interface CourtSummary {
+  id: string;
+  name: string;
+  description?: string | null;
+  price_per_hour: number;
+}
+
 interface CourtCardProps {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  court: Record<string, any>;
+  court: CourtSummary;
   venueSlug: string;
 }
 

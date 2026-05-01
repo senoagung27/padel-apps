@@ -1,9 +1,16 @@
 import Link from "next/link";
 import { MapPin, ArrowRight } from "lucide-react";
 
+interface VenueSummary {
+  slug: string;
+  name: string;
+  address?: string | null;
+  description?: string | null;
+  image_url?: string | null;
+}
+
 interface VenueCardProps {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  venue: Record<string, any>;
+  venue: VenueSummary;
 }
 
 export function VenueCard({ venue }: VenueCardProps) {
